@@ -1,0 +1,62 @@
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+    - name: prometheus
+      type: prometheus
+      access: proxy
+      url: http://prometheus-server
+      isDefault: true
+      jsonData:
+        timeInterval: 15s
+      version: 1
+      editable: true
+# fix the helm chart issue for wrong labeling
+podLabels:
+  app: grafana
+  release: grafana
+#auto pick up dashboards based on label grafana_dashboard
+sidecar:
+  dashboards:
+    enabled: true
+
+adminPassword: grafana
+# add the grafana dashboards for Kubernetes cluster and Prometheus
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /var/lib/grafana/dashboards/default
+dashboards:
+   default:
+     prometheus-stats:
+       gnetId: 2
+       revision: 2
+       datasource: prometheus
+     kubernetes-cluster-monitoring:
+       gnetId: 1621
+       revision: 1
+       datasource: prometheus
+     kubernetes-resource-requests:
+       gnetId: 7187
+       revision: 1
+       datasource: prometheus
+     kubernetes-capacity:
+       gnetId: 5309
+       revision: 1
+       datasource: prometheus
+     kubernetes-pods:
+       gnetId: 6336
+       revision: 1
+       datasource: prometheus
+     kubernetes-cluster:
+       gnetId: 6417
+       revision: 1
+       datasource: prometheus

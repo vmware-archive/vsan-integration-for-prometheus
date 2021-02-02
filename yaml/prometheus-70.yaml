@@ -1,0 +1,234 @@
+# Copyright (c) 2020 VMware, Inc. All Rights Reserved
+# SPDX-License-Identifier: BSD-2
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasource-config
+data:
+  datasource.yaml: |
+    apiVersion: 1
+    datasources:
+    - name: prometheus
+      type: prometheus
+      access: proxy
+      url: http://prometheus:9090
+      isDefault: true
+      jsonData:
+        timeInterval: 15s
+      version: 1
+      editable: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-config
+data:
+  all.yml: |
+    - name: 'default'       # name of this dashboard configuration (not dashboard itself)
+      org_id: 1             # id of the org to hold the dashboard
+      folder: ''            # name of the folder to put the dashboard (http://docs.grafana.org/v5.0/reference/dashboard_folders/)
+      type: 'file'          # type of dashboard description (json files)
+      options:
+        folder: '/dashboards'       # where dashboards are
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana-deploy
+  labels:
+    app: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:master
+        env:
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: "secret"
+        - name: GF_EXPLORE_ENABLED
+          value: "true"
+        - name: GF_PATHS_PROVISIONING
+          value: "/grafana-config"
+        ports:
+        - containerPort: 3000
+        volumeMounts:
+        - name: grafana-datasource-config
+          mountPath: /grafana-config/datasources
+        - name: grafana-dashboards-config
+          mountPath: /grafana-config/dashboards
+        - name: grafana-dashboards
+          mountPath: /dashboards
+      volumes:
+      - name: grafana-datasource-config
+        configMap:
+          name: grafana-datasource-config
+      - name: grafana-dashboards-config
+        configMap:
+          name: grafana-dashboards-config
+      - name: grafana-dashboards
+        configMap:
+          name: grafana-dashboards
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  labels:
+    app: grafana
+spec:
+  ports:
+  - port: 3000
+    targetPort: 3000
+    nodePort: 30000
+    protocol: TCP
+  selector:
+    app: grafana
+  type: NodePort
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      evaluation_interval: 30s
+    scrape_configs:
+    - job_name: vsan-metrics
+      scheme: https
+      bearer_token_file: /etc/secret-volume/bearer-token
+      tls_config:
+        insecure_skip_verify: true
+        cert_file: /etc/cert-volume/vcenter.crt
+      file_sd_configs:
+      - files:
+        - "/prom-config-server/servers.json"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+   name: prometheus-pvc
+spec:
+   accessModes:
+     - ReadWriteOnce
+   resources:
+     requests:
+        storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-deploy
+  labels:
+    app: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      volumes:
+      - name: shared-volume
+        emptyDir: {}
+      - name: config-volume
+        configMap:
+          name: prometheus-config
+      - name: cert-volume
+          configMap:
+            name: cert-config
+      - name: secret-volume
+        secret:
+          secretName: bearer-token-secret
+
+      containers:
+      - name: prometheus
+        image: prom/prometheus
+        volumeMounts:
+        # - name: data-volume
+        #   mountPath: /prometheus/data
+        - name: shared-volume
+          mountPath: /prom-config-server
+        - name: config-volume
+          mountPath: /prom-config
+        - name: secret-volume
+          mountPath: /etc/secret-volume/
+          readOnly: true
+        - name: cert-volume
+          mountPath: /etc/cert-volume/
+          readOnly: true
+        args:
+        - "--config.file=/prom-config/prometheus.yml"
+        ports:
+        - containerPort: 9090
+
+      # Sidecar container
+      - name: vsan-prometheus-servicediscovery
+        image: vmware/vsan-prometheus-servicediscovery:latest
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: shared-volume
+          mountPath: /prom-config-server
+        - name: secret-volume
+          mountPath: /etc/secret-volume/
+          readOnly: true
+        env:
+        # The protocol scheme used for service discovery, "http" or "https",
+        # default is "https"
+        - name: SCHEME
+          valueFrom:
+            secretKeyRef:
+              name: bearer-token-secret
+              key: scheme
+              optional: true
+        - name: VCENTER
+          valueFrom:
+            secretKeyRef:
+              name: bearer-token-secret
+              key: vcenter
+        # Use MODE "direct" to have prometheus directly scrape ESX servers instead of going
+        # through vCenter. "proxy" means going through vCenter.
+        - name: MODE
+          valueFrom:
+            secretKeyRef:
+              name: bearer-token-secret
+              key: mode
+              optional: true
+        - name: CONFIG_DIR
+          value: "/prom-config-server/servers.json"
+        # the interval for refreshing vCenter service discovery api
+        - name: INTERVAL_SEC
+          valueFrom:
+            secretKeyRef:
+              name: bearer-token-secret
+              key: interval
+              optional: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus
+spec:
+  ports:
+  - port: 9090
+    targetPort: 9090
+    nodePort: 30001
+    protocol: TCP
+  selector:
+    app: prometheus
+  type: NodePort

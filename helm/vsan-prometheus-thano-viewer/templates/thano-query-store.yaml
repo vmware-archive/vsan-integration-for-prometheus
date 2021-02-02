@@ -1,0 +1,73 @@
+# Copyright (c) 2020 VMware, Inc. All Rights Reserved
+# SPDX-License-Identifier: BSD-2
+
+# Deploy Thanos query and store for retrieving Prometheus data from object storage
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: thanos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thanos
+  template:
+    metadata:
+      labels:
+        app: thanos
+    spec:
+      volumes:
+      - name: thanos-config
+        secret:
+          secretName: {{ .Values.objectStoreConfigSecret }}
+      containers:
+      - name: thanos-query
+        image: thanosio/thanos:v0.8.0
+        volumeMounts:
+        - name: thanos-config
+          mountPath: /thanos-config
+        args:
+        - query
+        - --http-address
+        - "0.0.0.0:9090"
+        - --store
+        - "localhost:10904"
+        ports:
+        - containerPort: 9090
+
+      - name: thanos-store
+        image: thanosio/thanos:v0.8.0
+        args:
+        - store
+        - "--grpc-address=0.0.0.0:10904"
+        - --objstore.config-file
+        - /thanos-config/thanos-config.yaml
+        ports:
+        - containerPort: 10904
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+        volumeMounts:
+        - name: thanos-config
+          mountPath: /thanos-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-thanos
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: thanos
+spec:
+  ports:
+  - port: {{ .Values.servicePort | default "9090" }}
+    protocol: TCP
+  selector:
+    app: thanos
+

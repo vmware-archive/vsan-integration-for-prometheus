@@ -1,0 +1,78 @@
+# Copyright (c) 2020 VMware, Inc. All Rights Reserved
+# SPDX-License-Identifier: BSD-2
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: vsan-prometheus-rbac
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: vsan-prometheus # change the namespace to match it
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vsan-monitoring
+  labels:
+    app: vsan-monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vsan-monitoring
+  template:
+    metadata:
+      labels:
+        app: vsan-monitoring
+    spec:
+      volumes:
+        - name: secret-volume
+          secret:
+            secretName: bearer-token-secret
+      containers:
+      - name: vsan-prometheus-operator
+        image: vmware/vsan-prometheus-operator:latest
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - name: secret-volume
+            mountPath: /etc/secret-volume/
+            readOnly: true
+        env:
+          - name: VCENTER
+            valueFrom:
+              secretKeyRef:
+                name: bearer-token-secret
+                key: vcenter
+          # The protocol scheme used for service discovery, "http" or "https",
+          # default is "https". http is used for the exporter of pre vSAN 7.0 case
+          - name: SCHEME
+            valueFrom:
+              secretKeyRef:
+                name: bearer-token-secret
+                key: scheme
+                optional: true
+          # the label for serviceMonitor auto picking up services
+          - name: LABEL
+            valueFrom:
+              secretKeyRef:
+                name: bearer-token-secret
+                key: label
+                optional: true
+          # mode can be either proxy or direct for triggering vCenter service discovery
+          - name: MODE
+            valueFrom:
+              secretKeyRef:
+                name: bearer-token-secret
+                key: mode
+                optional: true
+          # the interval for refreshing vCenter service discovery api
+          - name: INTERVAL_SEC
+            valueFrom:
+              secretKeyRef:
+                name: bearer-token-secret
+                key: interval
+                optional: true

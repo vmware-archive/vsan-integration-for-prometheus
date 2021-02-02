@@ -1,0 +1,15 @@
+# Copyright (c) 2020 VMware, Inc. All Rights Reserved
+# SPDX-License-Identifier: BSD-2
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-vc-secret
+  namespace: {{ .Release.Namespace }}
+data:
+   vcenter: {{ .Values.vcenter | b64enc }}
+   username: {{ .Values.username | b64enc }}
+   passwd: {{ .Values.passwd | b64enc }}
+   vcport: {{ .Values.vcport | b64enc }}
+   clustername: {{ .Values.clustername | b64enc }}
+   "bearer-token": {{ .Values.bearerToken | b64enc }}

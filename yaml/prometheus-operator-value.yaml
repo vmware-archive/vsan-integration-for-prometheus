@@ -1,0 +1,13 @@
+alertmanager:
+  enabled: false
+prometheusOperator:
+  createCustomResource: false # ignore installing hook: "crd-install"
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false # disable the default helm chart serviceMonitor for allowing adding additional monitor
+    additionalServiceMonitors:
+      - vsan-monitoring
+    secrets:
+      - vsan-operator-auth-secret
+grafana:
+  adminPassword: grafana

@@ -1,0 +1,192 @@
+# Copyright (c) 2020 VMware, Inc. All Rights Reserved
+# SPDX-License-Identifier: BSD-2
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasource-config
+data:
+  datasource.yaml: |
+    apiVersion: 1
+    datasources:
+    - name: prometheus
+      type: prometheus
+      access: proxy
+      url: http://thanos:9090
+      isDefault: true
+      jsonData:
+        timeInterval: 15s
+      version: 1
+      editable: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-config
+data:
+  all.yml: |
+    - name: 'default'       # name of this dashboard configuration (not dashboard itself)
+      org_id: 1             # id of the org to hold the dashboard
+      folder: ''            # name of the folder to put the dashboard (http://docs.grafana.org/v5.0/reference/dashboard_folders/)
+      type: 'file'          # type of dashboard description (json files)
+      options:
+        folder: '/dashboards'       # where dashboards are  
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana-deploy
+  labels:
+    app: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:master
+        env:
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: "secret"
+        - name: GF_EXPLORE_ENABLED
+          value: "true"
+        - name: GF_PATHS_PROVISIONING
+          value: "/grafana-config"
+        ports:
+        - containerPort: 3000
+        volumeMounts:
+        - name: grafana-datasource-config
+          mountPath: /grafana-config/datasources
+        - name: grafana-dashboards-config
+          mountPath: /grafana-config/dashboards
+        - name: grafana-dashboards
+          mountPath: /dashboards
+      volumes:
+      - name: grafana-datasource-config
+        configMap:
+          name: grafana-datasource-config
+      - name: grafana-dashboards-config
+        configMap:
+          name: grafana-dashboards-config
+      - name: grafana-dashboards
+        configMap:
+          name: grafana-dashboards
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  labels:
+    app: grafana
+spec:
+  ports:
+  - port: 3000
+    protocol: TCP
+  selector:
+    app: grafana
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-nodeport
+  labels:
+    app: grafana
+spec:
+  ports:
+  - port: 3000
+    nodePort: 30005
+    protocol: TCP
+  selector:
+    app: grafana
+  type: NodePort
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thanos-deploy
+  labels:
+    app: thanos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thanos
+  template:
+    metadata:
+      labels:
+        app: thanos
+    spec:
+      volumes:
+      - name: thanos-config
+        configMap:
+          name: thanos-config
+
+      containers:
+
+      - name: thanos-query
+        image: thanosio/thanos:v0.8.0
+        volumeMounts:
+        - name: thanos-config
+          mountPath: /thanos-config
+        args:
+        - query
+        - --http-address
+        - "0.0.0.0:9090"
+        - --store
+        - "localhost:10904"
+        ports:
+        - containerPort: 9090
+
+      - name: thanos-store
+        image: thanosio/thanos:v0.8.0
+        args:
+        - store
+        - "--grpc-address=0.0.0.0:10904"
+        - --objstore.config-file
+        - /thanos-config/s3.yaml
+        ports:
+        - containerPort: 10904
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+        volumeMounts:
+        - name: thanos-config
+          mountPath: /thanos-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos
+  labels:
+    app: thanos
+spec:
+  ports:
+  - port: 9090
+    protocol: TCP
+  selector:
+    app: thanos
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-nodeport
+  labels:
+    app: thanos
+spec:
+  ports:
+  - port: 9090
+    nodePort: 30006
+    protocol: TCP
+  selector:
+    app: thanos
+  type: NodePort
+

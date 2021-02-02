@@ -1,0 +1,13 @@
+type: S3
+config:
+  bucket: bundles-0018abe9-430f-46d4-bb36-1c40d6d00be3
+  endpoint: humbug.eng.vmware.com:9000
+  secret_key: Bw/TLy18piNplQ5Q9Yk7Jk1scHpBq6uQk4lfSQ/s
+  access_key: 5EN2ZKKJV3LI5LSFNTQP
+  insecure: true
+  http_config:
+    idle_conn_timeout: 90s
+    response_header_timeout: 2m
+    insecure_skip_verify: true
+  trace:
+    enable: true

@@ -1,0 +1,133 @@
+alertmanager:
+  persistentVolume:
+    enabled: false
+nodeExporter:
+  enabled: false
+kubeStateMetrics:
+  enabled: false
+pushgateway:
+  enabled: false
+server:
+  configPath: /etc/prometheus-shared/prometheus.yml
+  replicaCount: 1
+  extraVolumes:
+    - name: prometheus-config-shared
+      emptyDir: {}
+    - name: thanos-util
+      configMap:
+        name: thanos-config-util-configmap # XXX need to change the name for matching the thanos config Configmap
+    - name: shared-volume
+      emptyDir: {}
+    - name: secret-volume
+      secret:
+        secretName: bearer-token-secret
+  extraVolumeMounts:
+    - name: prometheus-config-shared
+      mountPath: /etc/prometheus-shared/
+    - name: shared-volume
+      mountPath: /prom-config-server
+  extraSecretMounts:
+    - name: bearer-token-secret
+      mountPath: /etc/secret-volume/
+      secretName: bearer-token-secret
+      readOnly: true
+    - name: thanos-config
+      mountPath: /thanos-config
+      secretName: thanos-config-config-secret # XXX need to change the name for matching the thanos config Secret
+      readOnly: true
+  global:
+    scrape_interval: 5s
+    scrape_timeout: 4s
+    external_labels:
+      prometheus_group: test_run # Please change the name
+      prometheus_replica: '$(HOSTNAME)'
+    evaluation_interval: 5s
+  extraFlags:
+    - web.enable-lifecycle
+    - web.enable-admin-api
+  extraArgs:
+    log.level: debug
+    storage.tsdb.min-block-duration: 2h  # Don't change this, see docs/components/sidecar.md
+    storage.tsdb.max-block-duration: 2h  # Don't change this, see docs/components/sidecar.md
+  retention: 2h
+  sidecarContainers:
+    thanos-sidecar:
+      image: thanosio/thanos:v0.8.0
+      args:
+      - "sidecar"
+      - "--log.level=debug"
+      - "--tsdb.path=/data/"
+      - "--prometheus.url=http://127.0.0.1:9090"
+      - "--objstore.config-file=/thanos-config/thanos-config.yaml"
+      - "--reloader.config-file=/etc/prometheus-config/prometheus.yml"
+      - "--reloader.config-envsubst-file=/etc/prometheus-shared/prometheus.yml"
+      - "--reloader.rule-dir=/etc/prometheus-config/rules"
+      volumeMounts:
+      - name: storage-volume
+        mountPath: /data
+      - name: config-volume
+        mountPath: /etc/prometheus-config
+        readOnly: false
+      - name: prometheus-config-shared
+        mountPath: /etc/prometheus-shared/
+        readOnly: false
+      - name: thanos-config
+        mountPath: /thanos-config
+        readOnly: true
+      - name: thanos-util
+        mountPath: /thanos-util
+      - name: shared-volume
+        mountPath: /prom-config-server
+    vsan-prometheus-servicediscovery:
+      image: vmware/vsan-prometheus-servicediscovery:latest
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+        - name: shared-volume
+          mountPath: /prom-config-server
+        - name: secret-volume
+          mountPath: /etc/secret-volume/
+          readOnly: true
+      env:
+        # The protocol scheme used for service discovery, "http" or "https",
+        # default is "https"
+        - name: SCHEME
+          valueFrom:
+            secretKeyRef:
+              name: bearer-token-secret
+              key: scheme
+              optional: true
+        - name: VCENTER
+          valueFrom:
+            secretKeyRef:
+              name: bearer-token-secret
+              key: vcenter
+        - name: MODE
+          valueFrom:
+            secretKeyRef:
+              name: bearer-token-secret
+              key: mode
+              optional: true
+        - name: INTERVAL_SEC
+          valueFrom:
+            secretKeyRef:
+              name: bearer-token-secret
+              key: interval
+              optional: true
+        - name: CONFIG_DIR
+          value: "/prom-config-server/servers.json"
+
+#
+# This is the vSAN metrics scrape config
+#
+extraScrapeConfigs: |
+  - job_name: vsan-metrics
+    scrape_interval: 15s
+    scheme: https
+    bearer_token_file: /etc/secret-volume/bearer-token
+    file_sd_configs:
+    - files:
+      - "/prom-config-server/servers.json"
+    tls_config:
+      insecure_skip_verify: true
+#      insecure_skip_verify: false
+#      ca_file: /etc/secret-volume/ca_cert.pem

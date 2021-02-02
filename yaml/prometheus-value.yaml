@@ -1,0 +1,74 @@
+alertmanager:
+  persistentVolume:
+    enabled: false
+server:
+  persistentVolume:
+    enabled: false
+  extraSecretMounts:
+    - name: bearer-token-secret
+      mountPath: /etc/secret-volume/
+      secretName: bearer-token-secret
+      readOnly: true
+  extraVolumeMounts:
+    - name: shared-volume
+      mountPath: /prom-config-server
+  extraVolumes:
+    - name: shared-volume
+      emptyDir: {}
+    - name: secret-volume
+      secret:
+        secretName: bearer-token-secret
+  sidecarContainers:
+    vsan-prometheus-servicediscovery:
+      image: vmware/vsan-prometheus-servicediscovery:latest
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+      - name: shared-volume
+        mountPath: /prom-config-server
+      - name: secret-volume
+        mountPath: /etc/secret-volume/
+        readOnly: true
+      env:
+      # The protocol scheme used for service discovery, "http" or "https",
+      # default is "https"
+      - name: SCHEME
+        valueFrom:
+          secretKeyRef:
+            name: bearer-token-secret
+            key: scheme
+            optional: true
+      - name: VCENTER
+        valueFrom:
+          secretKeyRef:
+            name: bearer-token-secret
+            key: vcenter
+      - name: MODE
+        valueFrom:
+          secretKeyRef:
+            name: bearer-token-secret
+            key: mode
+            optional: true
+      - name: INTERVAL_SEC
+        valueFrom:
+          secretKeyRef:
+            name: bearer-token-secret
+            key: interval
+            optional: true
+      - name: CONFIG_DIR
+        value: "/prom-config-server/servers.json"
+#
+# This is the vSAN metrics scrape config
+#
+extraScrapeConfigs: |
+  - job_name: vsan-metrics
+    scrape_interval: 15s
+    scheme: https
+    bearer_token_file: /etc/secret-volume/bearer-token
+    file_sd_configs:
+    - files:
+      - "/prom-config-server/servers.json"
+    tls_config:
+      insecure_skip_verify: true
+#      insecure_skip_verify: false
+#      ca_file: /etc/secret-volume/ca_cert.pem
+

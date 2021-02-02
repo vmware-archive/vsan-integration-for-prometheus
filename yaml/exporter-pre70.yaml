@@ -1,0 +1,53 @@
+# Copyright (c) 2020 VMware, Inc. All Rights Reserved
+# SPDX-License-Identifier: BSD-2
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: exporter-deploy
+  labels:
+    app: exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: exporter
+  template:
+    metadata:
+      labels:
+        app: exporter
+    spec:
+      containers:
+      - name: exporter
+        image: vmware/vsan-prometheus-exporter:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        args:
+        # http://docs.gunicorn.org/en/stable/settings.html#threads
+        # thread number should be roughly the number of hosts to monitor
+        - "--threads=16"
+        envFrom:
+        - secretRef:
+            name: vc-info-secret
+        env:
+        - name: BEARER_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: bearer-token-secret
+              key: bearer-token
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: exporter
+  labels:
+    app: exporter
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30002
+    protocol: TCP
+  selector:
+    app: exporter
+  type: NodePort

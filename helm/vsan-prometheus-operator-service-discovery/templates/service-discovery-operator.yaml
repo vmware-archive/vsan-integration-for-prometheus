@@ -1,0 +1,97 @@
+# Copyright (c) 2020 VMware, Inc. All Rights Reserved
+# SPDX-License-Identifier: BSD-2
+
+# XXX: Create a new Role with just the permissions we need ...
+
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: vsan-monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vsan-monitoring
+  template:
+    metadata:
+      labels:
+        app: vsan-monitoring
+    spec:
+      volumes:
+        - name: secret-volume
+          secret:
+            secretName: {{ .Release.Name }}-auth-secret
+      containers:
+      - name: vsan-prometheus-operator
+        image: vmware/vsan-prometheus-operator:latest
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - name: secret-volume
+            mountPath: /etc/secret-volume/
+            readOnly: true
+        env:
+          - name: SECRET_NAME
+            value: {{ .Release.Name }}-auth-secret
+          - name: VCENTER
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-auth-secret
+                key: vcenter
+          # The protocol scheme used for service discovery, "http" or "https",
+          # default is "https". http is used for the exporter of pre vSAN 7.0 case
+          - name: SCHEME
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-auth-secret
+                key: scheme
+                optional: true
+          # the label for serviceMonitor auto picking up services
+          - name: LABEL_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-auth-secret
+                key: label_key
+                optional: true
+          - name: LABEL
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-auth-secret
+                key: label
+                optional: true
+          - name: SERVICEMONITOR_NAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-auth-secret
+                key: servicemonitor_name
+                optional: true
+          # mode can be either proxy or direct for triggering vCenter service discovery
+          - name: MODE
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-auth-secret
+                key: mode
+                optional: true
+          # the interval for refreshing vCenter service discovery api
+          - name: INTERVAL_SEC
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-auth-secret
+                key: interval
+                optional: true

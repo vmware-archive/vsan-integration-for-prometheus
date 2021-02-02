@@ -1,0 +1,16 @@
+# Copyright (c) 2020 VMware, Inc. All Rights Reserved
+# SPDX-License-Identifier: BSD-2
+
+# Create Thanos configuration Secret
+
+# Prometheus Operator Thanos spec requires Secret type for object storage configuration
+{{ if .Values.configYaml }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-config-secret
+  namespace: {{ .Release.Namespace }}
+data:
+  thanos-config.yaml: |-
+    {{ .Values.configYaml | b64enc }}
+{{ end }}

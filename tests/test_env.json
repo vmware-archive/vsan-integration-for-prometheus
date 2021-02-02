@@ -1,0 +1,7 @@
+{
+  "VCENTER": "10.160.208.176",
+  "USERNAME" : "Administrator@vsphere.local",
+  "PASSWD" : "Admin!23",
+  "CLUSTER": "VSAN-Cluster",
+  "REPO": "sabu-persistence-service-docker-local.artifactory.eng.vmware.com"
+}

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-auth-secret
+  namespace: {{ .Release.Namespace }}
+data:
+   "bearer-token": {{ .Values.bearerToken | b64enc }}
+   vcenter: {{ .Values.vcenter | b64enc }}
+   label: {{ .Values.label | b64enc }}
+   label_key: {{ .Values.labelKey | b64enc }}
+   mode: {{ .Values.mode | b64enc }}
+   scheme: {{ .Values.scheme | b64enc }}
+   servicemonitor_name: {{ .Values.serviceMonitorName | b64enc }}
+   {{ if  .Values.ca_cert_file }}
+   ca_cert.pem: |-
+     {{ .Files.Get .Values.ca_cert_file | b64enc }}
+   {{ end }}

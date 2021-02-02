@@ -1,0 +1,83 @@
+# Copyright (c) 2020 VMware, Inc. All Rights Reserved
+# SPDX-License-Identifier: BSD-2
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  {{ .Release.Name }}
+  labels:
+    app: vsan-prometheus-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vsan-prometheus-exporter
+  template:
+    metadata:
+      labels:
+        app: vsan-prometheus-exporter
+    spec:
+      containers:
+      - name: vsan-prometheus-exporter
+        image: vmware/vsan-prometheus-exporter:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        args:
+        # http://docs.gunicorn.org/en/stable/settings.html#threads
+        # thread number should be roughly the number of hosts to monitor
+        - "--threads={{ .Values.threadNumber }}"
+        envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}-vc-secret
+        env:
+          - name: SECRET_NAME
+            value: {{ .Release.Name }}-vc-secret
+          - name: BEARER_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-vc-secret
+                key: bearer-token
+          - name: VCENTER
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-vc-secret
+                key: vcenter
+          - name: VCUSER
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-vc-secret
+                key: username
+          - name: VCPASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-vc-secret
+                key: passwd
+          - name: VCPORT
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-vc-secret
+                key: vcport
+          - name: CLUSTERNAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Release.Name }}-vc-secret
+                key: clustername
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-vsan-prometheus-exporter
+  labels:
+    app: vsan-prometheus-exporter
+spec:
+  ports:
+  - port: {{ .Values.port | default "8080" }}
+    targetPort: 8080
+    {{ if eq .Values.serviceType "NodePort" }}
+    nodePort: {{ .Values.nodePort | default "30002" }}
+    {{ end }}
+    protocol: TCP
+  selector:
+    app: vsan-prometheus-exporter
+  type: {{ .Values.serviceType }}

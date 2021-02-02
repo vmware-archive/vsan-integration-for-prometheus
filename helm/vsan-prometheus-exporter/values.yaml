@@ -1,0 +1,28 @@
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+
+# these values are about the vCenter login information
+vcenter: null
+username: null
+vcport: "443"
+passwd: null
+clustername: VSAN-Cluster
+
+
+# those values about the service accessing information
+bearerToken: null
+port: "8080" # the service accessing port
+
+# auto create bearer-token-secret for matching prometheus-value.yaml
+createBearerTokenSecret: true
+scheme: http
+
+# The service is used to expose the vsan-prometheus-operator access
+# If serviceType can be either NodePort or LoadBalancer.
+# If you can use nodePort for defining access port with default 30002
+serviceType: NodePort
+
+# thread number should be roughly the number of hosts to monitor
+threadNumber: 16
+

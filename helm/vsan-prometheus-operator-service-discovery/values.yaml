@@ -1,0 +1,18 @@
+# Copyright (c) 2020 VMware, Inc. All Rights Reserved
+# SPDX-License-Identifier: BSD-2
+
+# Default values for vsan-prometheus-operator-service-discovery.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+vcenter: null
+bearerToken: null
+label: vsan-monitoring
+labelKey: app
+serviceMonitorName: vsan-monitoring
+mode: proxy
+scheme: https
+
+# the CA certificate for Prometheus security verification, which should work on IP address
+# Please to fill CA certificate file name, and move the certificate file in current folder for helm chart picking up.
+ca_cert_file: null

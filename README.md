@@ -1,30 +1,30 @@
-
-
-# vsan-integration-for-prometheus
+[<img src="https://s-a.github.io/license/img/bsd-2-clause.svg" />](https://github.com/vmware/vsan-prometheus/blob/main/LICENSE)
 
 ## Overview
 
-## Try it out
+Lots of new features come in vSphere & vSAN 7.0 release:
+* ESXi natively exposes a Prometheus /vsanmetrics API endpoint for vSAN metrics.
+* vCenter can act as a network proxy for each ESXi host /vsanmetrics API endpoint.
+* High frequency scrape intervals (e.g. 15s) are supported.
+* If used with VMware Kubernetes CSI driver, per-volume metrics have rich Kubernetes labels, e.g. PVC name and namespace.
 
-### Prerequisites
+The vSAN Prometheus project aims to make it easier to consume this native Prometheus support, as well as to provide a solution for pre-7.0 vSphere & vSAN.
 
-* Prereq 1
-* Prereq 2
-* Prereq 3
+## Features
+This project highlights the following features:
+1. Service discovery plugins for both standalone Prometheus and Prometheus Operator
+2. Pre-defined Grafana dashboards for monitoring the key metrics of vSAN performance.
+1. Getting started guides with example Prometheus/Grafana deployments for vSphere & vSAN 7.0 and pre vSphere & vSAN 7.0 versions.
+4. Using [Thanos](https://github.com/thanos-io/thanos) for uploading Prometheus snapshot to Object Store for vSAN benchmark monitoring.    
 
-### Build & Run
+## Getting Started
+Getting started with vSAN Prometheus is simple, and takes a few minutes.
+See how it is done in the [Getting started](./docs/getting-started.md) document.
 
-1. Step 1
-2. Step 2
-3. Step 3
-
-## Documentation
-
-## Contributing
-
-The vsan-integration-for-prometheus project team welcomes contributions from the community. Before you start working with vsan-integration-for-prometheus, please
-read our [Developer Certificate of Origin](https://cla.vmware.com/dco). All contributions to this repository must be
-signed as described on that page. Your signature certifies that you wrote the patch or have the right to pass it on
-as an open-source patch. For more detailed information, refer to [CONTRIBUTING.md](CONTRIBUTING.md).
+## Development
+Thanks for taking the time to join our community and start contributing! We welcome pull requests.
+Feel free to dig through the issues and jump in. 
+The [development](./docs/development.md) document provides details for contributing the repo.
 
 ## License
+vSAN Prometheus is licensed under [BSD 2](./LICENSE)

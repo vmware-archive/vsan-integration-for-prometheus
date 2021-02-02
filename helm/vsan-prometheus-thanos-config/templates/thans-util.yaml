@@ -1,0 +1,48 @@
+# Copyright (c) 2020 VMware, Inc. All Rights Reserved
+# SPDX-License-Identifier: BSD-2
+
+# Create thanos Configmap for passing script thanos-oneoff.sh
+# The thanos-oneoff.sh triggers the Prometheus snapshot, and upload to S3 object
+# Note: the script makes an assumption that the snapshots are stored in the /data folder
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-util-configmap
+  namespace: {{ .Release.Namespace }}
+data:
+  thanos-oneoff.sh: |
+    # We use the jq tool to parse JSON and retrieve properties
+    wget -O /data/jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+    chmod +x /data/jq
+
+    # Trigger a prometheus snapshot. Store directory path of snapshot to
+    # /data/snap.dir file.
+    wget -O /data/snap.json --post-data '' http://localhost:9090/api/v1/admin/tsdb/snapshot
+    cat /data/snap.json | /data/jq '.data.name | "/data/snapshots/\(.)/"' | sed 's/"//g' > /data/snap.dir
+    ls -l `cat /data/snap.dir`
+
+    # Run thanos to perform upload ...
+    # We can't make thanos exit after uploading the snapshot, so we need
+    # to start it as a daemon, check its progress and then kill it
+    thanos sidecar --tsdb.path `cat /data/snap.json | /data/jq '.data.name | "/data/snapshots/\(.)/"' | sed 's/"//g'` \
+      --prometheus.url "http://localhost:9090" \
+      --http-address="0.0.0.0:10903" --grpc-address="0.0.0.0:10904" \
+      --objstore.config-file=/thanos-config/thanos-config.yaml &
+
+    # Check every N seconds if now all blocks (directories in the snapshot
+    # directory) are uploaded by Thanos by checking the thanos.shipper.json
+    # file.
+    notice=$(printf '\nCheck every 5 seconds if now all blocks (directories in the snapshot directory) are uploaded by Thanos by checking the thanos.shipper.json file.\n...')
+    echo "$notice"
+    touch /data/notdone
+    while [ -f /data/notdone ]; do
+      sleep 5
+      echo "$notice"
+      rm /data/notdone
+      # If any of the directories doesn't show up in the shipper.json, then a
+      # file /data/notdone is created
+      for x in `ls $(cat /data/snap.dir) | grep -v missing | grep -v thanos`; do if ! cat `cat /data/snap.dir`thanos.shipper.json | grep $x; then touch /data/notdone; fi  done
+    done
+    # We are done, kill thanos
+    # killall thanos

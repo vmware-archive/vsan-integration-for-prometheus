@@ -1,0 +1,183 @@
+# Copyright (c) 2020 VMware, Inc. All Rights Reserved
+# SPDX-License-Identifier: BSD-2
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      evaluation_interval: 30s
+      external_labels:
+        run: ##RUNNAME##
+    scrape_configs:
+    - job_name: vsan-metrics
+      scheme: https
+      bearer_token_file: /etc/secret-volume/bearer-token
+      tls_config:
+        insecure_skip_verify: true
+      file_sd_configs:
+      - files:
+        - "/prom-config-server/servers.json"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: thanos-util
+data:
+  thanos-oneoff.sh: |
+    # We use the jq tool to parse JSON and retrieve properties
+    wget -O /jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+    chmod +x /jq
+
+    # Trigger a prometheus snapshot. Store directory path of snapshot to
+    # /snap.dir file.
+    wget -O /snap.json --post-data '' http://localhost:9090/api/v1/admin/tsdb/snapshot
+    cat /snap.json | /jq '.data.name | "/prometheus/data/snapshots/\(.)/"' | sed 's/"//g' > /snap.dir
+    ls -l `cat /snap.dir`
+
+    # Run thanos to perform upload ...
+    # We can't make thanos exit after uploading the snapshot, so we need
+    # to start it as a daemon, check its progress and then kill it
+    thanos sidecar --tsdb.path `cat /snap.json | /jq '.data.name | "/prometheus/data/snapshots/\(.)/"' | sed 's/"//g'` \
+      --prometheus.url "http://localhost:9090" \
+      --http-address="0.0.0.0:10903" --grpc-address="0.0.0.0:10904" \
+      --objstore.config-file=/thanos-config/s3.yaml &
+    
+    # Check every N seconds if now all blocks (directories in the snapshot
+    # directory) are uploaded by Thanos by checking the thanos.shipper.json
+    # file.
+    touch /notdone
+    while [ -f /notdone ]; do 
+      sleep 5
+      rm /notdone
+      # If any of the directories doesn't show up in the shipper.json, then a
+      # file /notdone is created
+      for x in `ls $(cat /snap.dir) | grep -v missing | grep -v thanos`; do if ! cat `cat /snap.dir`thanos.shipper.json | grep $x; then touch /notdone; fi  done
+    done
+    # We are done, kill thanos
+    killall thanos
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+   name: prometheus-pvc
+spec:
+   accessModes:
+     - ReadWriteOnce
+   resources:
+     requests:
+        storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-deploy
+  labels:
+    app: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      volumes:
+      - name: shared-volume
+        emptyDir: {}
+      - name: config-volume
+        configMap:
+          name: prometheus-config
+      - name: thanos-config
+        configMap:
+          name: thanos-config
+      - name: thanos-util
+        configMap:
+          name: thanos-util
+      - name: secret-volume
+        secret:
+          secretName: bearer-token-secret
+      - name: data-volume
+        emptyDir: {}
+      # - name: data-volume
+      #   persistentVolumeClaim:
+      #     claimName: prometheus-pvc
+
+      containers:
+
+      - name: prometheus
+        image: prom/prometheus
+        volumeMounts:
+        - name: data-volume
+          mountPath: /prometheus/data
+        - name: shared-volume
+          mountPath: /prom-config-server
+        - name: config-volume
+          mountPath: /prom-config
+        - name: secret-volume
+          mountPath: /etc/secret-volume/
+          readOnly: true
+        args:
+        - "--config.file=/prom-config/prometheus.yml"
+        - --web.enable-lifecycle
+        - --storage.tsdb.min-block-duration=2h
+        - --storage.tsdb.max-block-duration=2h
+        - --web.enable-admin-api
+        ports:
+        - containerPort: 9090
+
+      - name: thanos
+        image: thanosio/thanos:v0.8.0
+        command: ['sh']
+        args: ["-c", "while true; do date; echo hello, world!; sleep 60; done"]
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+        volumeMounts:
+        - name: data-volume
+          mountPath: /prometheus/data
+        - name: shared-volume
+          mountPath: /prom-config-server
+        - name: config-volume
+          mountPath: /prom-config
+        - name: secret-volume
+          mountPath: /etc/secret-volume/
+          readOnly: true
+        - name: thanos-config
+          mountPath: /thanos-config
+        - name: thanos-util
+          mountPath: /thanos-util
+
+      # vSAN Service Discovery Sidecar container
+      - name: vsan-prometheus-config
+        image: vmware/vsan-prometheus-servicediscovery:latest
+        #image: vsan-prometheus-servicediscovery:latest
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: shared-volume
+          mountPath: /prom-config-server
+        - name: secret-volume
+          mountPath: /etc/secret-volume/
+          readOnly: true
+        env:
+        - name: VCENTER
+          valueFrom:
+            secretKeyRef:
+              name: bearer-token-secret
+              key: vcenter
+        # Use MODE "direct" to have prometheus directly scrape ESX servers instead of going
+        # through vCenter. "proxy" means going through vCenter.
+        - name: MODE
+          value: "direct"
+        - name: CONFIG_DIR
+          value: "/prom-config-server/servers.json"
+        - name: INTERVAL_SEC
+          value: "300"
+
