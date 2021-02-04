@@ -29,7 +29,6 @@ def PromptPassword(args):
          prompt='Enter password for host %s and username %s: ' %(args.host, args.username))
    return args
 
-
 # setup the command line arguments
 def GetArgs():
    parser = argparse.ArgumentParser(description='Arguments for vCenter')

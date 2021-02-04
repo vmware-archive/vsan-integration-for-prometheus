@@ -1,0 +1,140 @@
+language: python
+python:
+  - "3.7"
+stage:
+  - unit-test
+  - docker-build-push
+services:
+  - docker
+before_install:
+  - python -m pip install --upgrade pip
+  - COMMIT_RANGE="$(echo ${TRAVIS_COMMIT_RANGE} | cut -d '.' -f 1,4 --output-delimiter '..')"
+  - CHANGED_FILES="$(git diff --name-only ${COMMIT_RANGE} --)"
+  - export CHANGED_FILES
+  - SHORT_SHAR=$(git rev-parse --short HEAD)
+  - TAGS="github-${SHORT_SHAR}"
+  - echo $TAGS
+install:
+  - pip install -r tests/requirements.txt
+jobs:
+  include:
+    - stage: unit-test
+      name: "unittest vsan-prometheus-setup"
+      env: PYTHONPATH="${PYTHONPATH}:/vsan-prometheus-setup"
+      script:
+        - |
+          if [[ $CHANGED_FILES =~ "vsan-prometheus-setup" ]]
+          then
+            echo "Run unittest for vsan-prometheus-setup" && python tests/test_token_setup.py
+            if [ $? -eq 0 ]
+            then
+              echo "vsan-prometheus-setup test success"
+            else
+              echo "vsan-prometheus-setup test fails"
+              exit 1
+            fi
+          else
+            echo "won't trigger vsan-prometheus-setup test"
+          fi
+    -
+      name: "unittest vsan-prometheus-servicediscovery"
+      env: PYTHONPATH="${PYTHONPATH}:/vsan-prometheus-servicediscovery"
+      script:
+        - |
+          if [[ $CHANGED_FILES =~ "vsan-prometheus-servicediscovery" ]]
+          then
+            echo "Run unittest for vsan-prometheus-servicediscovery" && python tests/test_vsan_servicediscovery.py
+            if [ $? -eq 0 ]
+            then
+              echo "test_vsan_servicediscovery test success"
+            else
+              echo "test_vsan_servicediscovery test fails"
+              exit 1
+            fi
+          else
+            echo "won't trigger test_vsan_servicediscovery test"
+          fi
+    - stage: docker-build-push
+      name: "vsan-prometheus-setup image building and publish"
+      script:
+        - |
+          if [[ $CHANGED_FILES =~ "vsan-prometheus-setup" ]]
+          then
+            echo "Run vsan-prometheus-setup image building"
+            docker build -t vmware/vsan-prometheus-setup:$TAGS vsan-prometheus-setup
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+            echo "Run vsan-prometheus-setup image publish"
+            docker push vmware/vsan-prometheus-setup:$TAGS
+            if [ $? -eq 0 ]
+            then
+              echo "vsan-prometheus-setup image building & publishing success"
+            else
+              echo "vsan-prometheus-setup image building & publishing fails"
+              exit 1
+            fi
+          else
+            echo "won't trigger vsan-prometheus-setup image building & publishing"
+          fi
+    -
+      name: "vsan-prometheus-servicediscovery image building and publish"
+      script:
+        - |
+          if [[ $CHANGED_FILES =~ "vsan-prometheus-servicediscovery" ]]
+          then
+            echo "Run vsan-prometheus-servicediscovery image building"
+            docker build -t vmware/vsan-prometheus-servicediscovery:$TAGS vsan-prometheus-servicediscovery
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+            echo "Run vsan-prometheus-servicediscovery image publish"
+            docker push vmware/vsan-prometheus-servicediscovery:$TAGS
+            if [ $? -eq 0 ]
+            then
+              echo "vsan-prometheus-servicediscovery image building & publishing success"
+            else
+              echo "vsan-prometheus-servicediscovery image building & publishing fails"
+              exit 1
+            fi
+          else
+            echo "won't trigger vsan-prometheus-servicediscovery image building & publishing"
+          fi
+    -
+      name: "vsan-prometheus-operator image building and publish"
+      script:
+        - |
+          if [[ $CHANGED_FILES =~ "vsan-prometheus-operator" ]]
+          then
+            echo "Run vsan-prometheus-operator image building"
+            docker build -t vmware/vsan-prometheus-operator:$TAGS vsan-prometheus-operator
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+            echo "Run vsan-prometheus-operator image publish"
+            docker push vmware/vsan-prometheus-operator:$TAGS
+            if [ $? -eq 0 ]
+            then
+              echo "vsan-prometheus-operator image building & publishing success"
+            else
+              echo "vsan-prometheus-operator image building & publishing fails"
+              exit 1
+            fi
+          else
+            echo "won't trigger vsan-prometheus-operator image building & publishing"
+          fi
+    -
+      name: "vsan-prometheus-exporter image building and publish"
+      script:
+        - |
+          if [[ $CHANGED_FILES =~ "vsan-prometheus-exporter" ]]
+          then
+            echo "Run vsan-prometheus-exporter image building"
+            docker build -t vmware/vsan-prometheus-exporter:$TAGS vsan-prometheus-exporter
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+            echo "Run vsan-prometheus-exporter image publish"
+            docker push vmware/vsan-prometheus-exporter:$TAGS
+            if [ $? -eq 0 ]
+            then
+              echo "vsan-prometheus-exporter image building & publishing success"
+            else
+              echo "vsan-prometheus-exporter image building & publishing fails"
+              exit 1
+            fi
+          else
+            echo "won't trigger vsan-prometheus-exporter image building & publishing"
+          fi
