@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright 2020 VMware, Inc.
+# Copyright 2020-2021 VMware, Inc.
 # SPDX-License-Identifier: BSD-2-Clause
 #
 # this script launchs a daemon for auto updating the server list file, which consumes by the prometheus container

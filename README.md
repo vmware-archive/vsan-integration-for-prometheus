@@ -1,4 +1,4 @@
-[<img src="https://s-a.github.io/license/img/bsd-2-clause.svg" />](https://github.com/vmware/vsan-prometheus/blob/main/LICENSE)
+[<img src="https://s-a.github.io/license/img/bsd-2-clause.svg" />](https://github.com/vmware/vsan-integration-for-prometheus/blob/master/LICENSE)
 
 ## Overview
 

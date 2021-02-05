@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright 2020 VMware, Inc.
+# Copyright 2020-2021 VMware, Inc.
 # SPDX-License-Identifier: BSD-2-Clause
 #
 # This is the entry for running unit tests.

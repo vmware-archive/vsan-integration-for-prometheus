@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Copyright 2020 VMware, Inc.
+# Copyright 2020-2021 VMware, Inc.
 # SPDX-License-Identifier: BSD-2-Clause
 #
 
 """
-Copyright 2016-2020 VMware, Inc.  All rights reserved.
+Copyright 2016-2021 VMware, Inc.  All rights reserved.
 
 This module defines basic helper functions used in the sample codes
 """
