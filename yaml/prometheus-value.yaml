@@ -1,6 +1,8 @@
 alertmanager:
   persistentVolume:
     enabled: false
+nodeExporter:
+  enabled: false
 server:
   persistentVolume:
     enabled: false
@@ -20,7 +22,7 @@ server:
         secretName: bearer-token-secret
   sidecarContainers:
     vsan-prometheus-servicediscovery:
-      image: vmware/vsan-prometheus-servicediscovery:latest
+      image: vmware/vsan-prometheus-servicediscovery:v20210225
       imagePullPolicy: IfNotPresent
       volumeMounts:
       - name: shared-volume

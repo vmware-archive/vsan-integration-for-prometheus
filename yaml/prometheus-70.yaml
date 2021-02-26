@@ -177,7 +177,7 @@ spec:
 
       # Sidecar container
       - name: vsan-prometheus-servicediscovery
-        image: vmware/vsan-prometheus-servicediscovery:latest
+        image: vmware/vsan-prometheus-servicediscovery:v20210225
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: shared-volume

@@ -40,7 +40,7 @@ spec:
             secretName: {{ .Release.Name }}-auth-secret
       containers:
       - name: vsan-prometheus-operator
-        image: vmware/vsan-prometheus-operator:latest
+        image: vmware/vsan-prometheus-operator:v20210225
         imagePullPolicy: IfNotPresent
         volumeMounts:
           - name: secret-volume

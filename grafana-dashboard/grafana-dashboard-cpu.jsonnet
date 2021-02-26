@@ -24,7 +24,7 @@ local LayersPanels(id, y, title, format, expr) =
 
 local panels = 
   LayersPanels(10, 0, "Top-5 CPU Utilization", "percent", 
-    "topk(5, rate(vmware_esx_world_USAGEtime_seconds_total{subsystem=\"SUBSYS\"}[1m]) / rate(vmware_esx_world_uptime_seconds_total{subsystem=\"SUBSYS\"}[1m])) * 100");
+    "topk(5, rate(vmware_esx_world_uptime_seconds_total{subsystem=\"SUBSYS\"}[1m]) / rate(vmware_esx_world_uptime_seconds_total{subsystem=\"SUBSYS\"}[1m])) * 100");
 
    # XXX: Add all the missing ones
 

@@ -53,6 +53,13 @@ def vcpuMetrics(out, node1, node2, entity, metrics):
       labels = {"subsystem": "Network", "host_uuid": x[0], "name": x[1]}
       # # XXX: Don't seem to match?!
       # metricMap = {"waitTime": "waittime", "runTime": "usedtime", "readyTime": "readytime"}
+   # from vSAN 70U1, getNicWorldInformation => getNetworkWorldInformation
+   elif node2 == "$getNetworkWorldInformation":
+      labels = {"subsystem": "Network", "host_uuid": x[0], "name": x[1]}
+      m = re.match(r'(vmx|PVSCSI|NVMeComplWorld|Cmpl-vmhba|CmdCompl)-?(.*)', x[1])
+      if m:
+         labels['subsystem'] = 'Storage'
+         labels['world_id'] = x[2]
    elif node2 == "$getCmmdsWorldInformation":
       y = x[1].split('_')
       labels = {"subsystem": "CMMDS", "host_uuid": x[0], "world_id": x[2], "role": x[1] if len(y) == 1 else y[2]}
@@ -840,7 +847,7 @@ def virtualDiskStats(out, node1, node2, entity, metrics):
 paths = [
    (
       "/sched/Vcpus",
-      ["$getLsomWorldInformation", "$getDomWorldInformation", "$getNicWorldInformation", "$getCmmdsWorldInformation"],
+      ["$getLsomWorldInformation", "$getDomWorldInformation", "$getNicWorldInformation", "$getNetworkWorldInformation", "$getCmmdsWorldInformation"],
       vcpuMetrics
    ),
    (

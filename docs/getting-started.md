@@ -2,6 +2,7 @@
 - [Overview](#Overview)
 - [Background](#Background)
 - [Prerequisites](#Prerequisites)
+- [Supportability Metrics](#Supportability)
 - [Deploying](#Deploying)
   * [vSAN 7.0](#vsan7.0)
     + [Option 1: Sidercar container](#option1_vsan70)
@@ -57,6 +58,25 @@ helm repo add stable https://charts.helm.sh/stable
 helm repo update
 ```
 
+<a name="Supportability"></a>
+# Supportability Metrics
+Two major kinds of deployments are provided based on different vSAN versions.
+  * From vSAN 7.0, each vSAN host provides vSAN Prometheus endpoints, so the deployed Prometheus instance can easily scrape vSAN Perf data through the endpoints.
+  * To support the older vSAN versions pre vSAN 7.0, this repo provides vsan-prometheus-exporter container to translate vSAN Perf data in Prometheus format.
+
+For each deployment, this repo also provides two options either SideCar or Prometheus Operator way. You can follow either option to intergate existing Prometheus monitoring solution.
+
+Some of vSAN Perf metrics are not avaliable for old vSAN versions, which makes the lacking of data in Grafana dashboards.
+
+The following supportability table summarize those difference between vSAN versions 
+
+ |  vSAN Version |  Deployment Solutions | Dashboard Graph Unavaliable  | 
+|:---:|:---:|:---:|
+|  vSAN 6.5U3 | vSAN Prometheus Exporter  | vSAN CPU - LLOG, Network, CMMDS; DOM DG, vSAN Layers - DOM CompMgr DG  |
+|  vSAN 6.7U3 | vSAN Prometheus Exporter  | vSAN Layers - DOM Owner Leaf Tput  |
+|  vSAN 7.0 | vSAN Prometheus Exporter; Built-In Endpoint   | vSAN Layers - DOM Owner Leaf Tput  |
+|  vSAN 7.0U1 | vSAN Prometheus Exporter; Built-In Endpoint  | vSAN Layers - DOM Owner Leaf Tput  |
+
 
 <a name="Deploying"></a>
 # Deploying
@@ -65,7 +85,7 @@ thus the monitoring solutions have difference between vSAN 7.0 and vSAN pre 7.0.
 
 Step 0.1: Please clone this repo and go to the repo folder for all following commands.
 ```
-git clone https://gitlab.eng.vmware.com/cdickmann/vsan-prometheus.git
+git clone https://github.com/vmware/vsan-integration-for-prometheus.git
 cd vsan-prometheus 
 ```
 
@@ -83,7 +103,7 @@ either option, the metrics authorization token setup and Grafana dashboard confi
 
 Step 1: vSphere admin requests metrics authorization token for a specific vSAN cluster.
 ```
-docker run -it vmware/vsan-prometheus-setup:beta-0.11 --host <vCenter> --username <userName> --cluster <clustername>
+docker run -it vmware/vsan-prometheus-setup:v20210225 --host <vCenter> --username <userName> --cluster <clustername>
 ```
 This is a sample output from above command.
 Learn more vsan-prometheus-setup container usage, please go to its [readme](../vsan-prometheus-setup/README.md).
@@ -157,22 +177,23 @@ In addition to Prometheus operator helm chart, we build an add-on integration fo
 The helm chart wraps vsan-prometheus-operator container, which generates serviceMonitor for tracking vSAN Prometheus endpoints.
 Get more details from this container [readme](../vsan-prometheus-operator/README.md).
 
-Step 1: Install helm chart Prometheus Operator:
-```
-helm install -f yaml/prometheus-operator-value.yaml vsan-monitor prometheus-community/kube-prometheus-stack
-```
 
-Step 2: Install helm chart vSAN Prometheus service discovery:
+Step 1: Install helm chart vSAN Prometheus service discovery:
 ```
 helm install vsan-operator helm/vsan-prometheus-operator-service-discovery --set vcenter=xxx --set bearerToken=xxx
 ``` 
+
+Step 2: Install helm chart Prometheus Operator:
+```
+helm install -f yaml/prometheus-operator-value.yaml vsan-monitor prometheus-community/kube-prometheus-stack
+```
 
 Example commands are provided with a [demo video](../example-demo-videos/vsan70-operator.mp4).
 ```
 kubectl create configmap grafana-dashboards --from-file=grafana-dashboard/dashboards
 kubectl label configmap grafana-dashboards grafana_dashboard=1
-helm install -f yaml/prometheus-operator-value.yaml vsan-monitor prometheus-community/kube-prometheus-stack
 helm install vsan-operator helm/vsan-prometheus-operator-service-discovery --set vcenter=xxx --set bearerToken=xxx
+helm install -f yaml/prometheus-operator-value.yaml vsan-monitor prometheus-community/kube-prometheus-stack
 ```
 
 **Note**:
@@ -244,16 +265,16 @@ helm delete prometheus grafana
 ```
 
 <a name="option2_prevsan70"></a>
-### Option 1: Prometheus Operator
+### Option 2: Prometheus Operator
 
-Step 1: Install helm chart Prometheus Operator:
-```
-helm install -f yaml/prometheus-operator-value.yaml vsan-monitor prometheus-community/kube-prometheus-stack
-```
-
-Step 2: Install helm chart vSAN Prometheus exporter:
+Step 1: Install helm chart vSAN Prometheus exporter:
 ```
 helm install vsan-exporter helm/vsan-prometheus-exporter --set vcenter=xxx --set username='xxx' --set passwd='xxx' --set bearerToken=$BEARER_TOKEN
+```
+
+Step 2: Install helm chart Prometheus Operator:
+```
+helm install -f yaml/prometheus-operator-value.yaml vsan-monitor prometheus-community/kube-prometheus-stack
 ```
 
 Step 3: Install helm chart vSAN operator service discovery:
@@ -272,8 +293,8 @@ Example commands are provided with a [demo video](../example-demo-videos/vsan-pr
 export BEARER_TOKEN=$(uuidgen)
 kubectl create configmap grafana-dashboards --from-file=grafana-dashboard/dashboards
 kubectl label configmap grafana-dashboards grafana_dashboard=1
-helm install -f yaml/prometheus-operator-value.yaml vsan-monitor prometheus-community/kube-prometheus-stack
 helm install vsan-exporter helm/vsan-prometheus-exporter --set vcenter=xxx --set username='xxx' --set passwd='xxx' --set bearerToken=$BEARER_TOKEN
+helm install -f yaml/prometheus-operator-value.yaml vsan-monitor prometheus-community/kube-prometheus-stack
 export VC_SERVICE=$(kubectl get svc -l "app=vsan-prometheus-exporter" -o jsonpath="{.items[0].metadata.name}:{.items[0].spec.ports[0].port}")
 helm install vsan-operator helm/vsan-prometheus-operator-service-discovery --set vcenter=$VC_SERVICE --set bearerToken=$BEARER_TOKEN --set scheme=http
 ```
@@ -391,7 +412,7 @@ provides how to organize and generate Grafana dashboards.
 We use Thanos to upload Prometheus snapshots to S3 storage. The [benchmark ephemeral document](./benchmark-ephemeral.md)
 provides the idea, the design and implementation.
 
-Please go to  [Thanos getting started](./benchmark-ephemeral-started.md) for having a try!
+Please go to [Thanos getting started](./benchmark-ephemeral-started.md) for having a try!
 
 <a name="development"></a>
 # Development

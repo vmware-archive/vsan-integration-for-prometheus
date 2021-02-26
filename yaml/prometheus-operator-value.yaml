@@ -1,5 +1,7 @@
 alertmanager:
   enabled: false
+nodeExporter:
+  enabled: false
 prometheusOperator:
   createCustomResource: false # ignore installing hook: "crd-install"
 prometheus:
