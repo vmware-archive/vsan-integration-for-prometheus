@@ -21,10 +21,14 @@ This project highlights the following features:
 Getting started with vSAN Prometheus is simple, and takes a few minutes.
 See how it is done in the [Getting started](./docs/getting-started.md) document.
 
-## Development
+## Contributing
 Thanks for taking the time to join our community and start contributing! We welcome pull requests.
-Feel free to dig through the issues and jump in. 
-The [development](./docs/development.md) document provides details for contributing the repo.
+Feel free to dig through the issues and jump in.
+* Before contributing, please get familiar with our
+[Code of Conduct](CODE_OF_CONDUCT.md).
+* Check out our [Contributor Guide](./docs/development.md) for information
+about setting up your development environment and our contribution workflow.
+* Check out [Open Issues](https://github.com/vmware/vsan-integration-for-prometheus/issues).
 
 ## License
 vSAN Prometheus is licensed under [BSD 2](./LICENSE)
