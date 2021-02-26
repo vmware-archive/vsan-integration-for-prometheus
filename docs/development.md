@@ -42,6 +42,6 @@ We support the basic unit test in the CICD pipeline. And end-to-end test needs l
 
 Please go to the tests folder for more details.
 
-We use the Github Actions as our CICD pipeline running envrionment.
+We use the Github Actions / Travis as our CICD pipeline running envrionment.
 
 
