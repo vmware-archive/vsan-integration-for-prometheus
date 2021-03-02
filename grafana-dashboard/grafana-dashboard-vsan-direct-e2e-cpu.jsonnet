@@ -40,5 +40,5 @@ lib.Dashboard{
   title: "vSAN Direct e2e CPU",
   uid: "vsan-direct-e2e-cpu",
   panels: panels,
-  tags: ["vsan"]
+  tags: ["vsan", "vsan70u1"]
 }

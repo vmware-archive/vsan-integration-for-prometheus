@@ -563,7 +563,8 @@
    "schemaVersion": 22,
    "style": "dark",
    "tags": [
-      "vsan"
+      "vsan",
+      "vsan70u1"
    ],
    "templating": {
       "list": [ ]

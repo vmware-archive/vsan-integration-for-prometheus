@@ -73,9 +73,9 @@ The following supportability table summarize those difference between vSAN versi
  |  vSAN Version |  Deployment Solutions | Dashboard Graph Unavaliable  | 
 |:---:|:---:|:---:|
 |  vSAN 6.5U3 | vSAN Prometheus Exporter  | vSAN CPU - LLOG, Network, CMMDS; DOM DG, vSAN Layers - DOM CompMgr DG  |
-|  vSAN 6.7U3 | vSAN Prometheus Exporter  | vSAN Layers - DOM Owner Leaf Tput  |
-|  vSAN 7.0 | vSAN Prometheus Exporter; Built-In Endpoint   | vSAN Layers - DOM Owner Leaf Tput  |
-|  vSAN 7.0U1 | vSAN Prometheus Exporter; Built-In Endpoint  | vSAN Layers - DOM Owner Leaf Tput  |
+|  vSAN 6.7U3 | vSAN Prometheus Exporter  |  None |
+|  vSAN 7.0 | vSAN Prometheus Exporter; Built-In Endpoint   | None |
+|  vSAN 7.0U1 | vSAN Prometheus Exporter; Built-In Endpoint  | None  |
 
 
 <a name="Deploying"></a>

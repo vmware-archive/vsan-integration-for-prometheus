@@ -43,5 +43,5 @@ lib.Dashboard{
   title: "vSAN Direct Disk",
   uid: "vsan-direct-layer",
   panels: panels,
-  tags: ["vsan"]
+  tags: ["vsan", "vsan70u1"]
 }

@@ -33,6 +33,13 @@ reached.
 
 Here is a screenshot of [vSAN CPU dashboard](../screenshots/grafana-vsan-cpu.png).
 
+### vSAN Direct
+In vSAN 70U1, vSAN-Direct feature is released to allow application consuming local storage devices on a vSAN host directly.
+Three Grafana dashboards are provides for performance metrics of vSAN-Direct:
+1. vSAN Direct Disk
+2. vSAN Direct e2e CPU
+3. vSAN Direct Host
+
 ## How to build
 
 In this directory we define our dashboards using `jsonnet`, a JSON templating language, because
@@ -45,7 +52,7 @@ jsonnet installed and so we check in both the final JSON as well as the jsonnet 
 
 We tested with jsonnet `v0.13.0`, installed via `brew`, available in the `$PATH`. 
 ```bashbash 
-cd /path/to/vsan-prometheus-repo
+cd /path/to/vsan-integration-for-prometheus 
 bash grafana-dashboard/build.sh
 ```
 

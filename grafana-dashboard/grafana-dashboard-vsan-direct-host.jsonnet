@@ -44,5 +44,5 @@ lib.Dashboard{
   title: "vSAN Direct Host",
   uid: "vsan-direct-host",
   panels: panels,
-  tags: ["vsan"]
+  tags: ["vsan", "vsan70u1"]
 }
