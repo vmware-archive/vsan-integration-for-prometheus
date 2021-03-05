@@ -140,7 +140,6 @@ def main():
       sys.stderr.write("Cannot setup cluster prometheus token: %s" % str(e))
       return -1
 
-
 # Start program
 if __name__ == "__main__":
    main()
