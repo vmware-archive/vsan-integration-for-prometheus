@@ -14,7 +14,7 @@ Before diving into details, please make sure those following preparation steps a
 
 Step 1: Please clone this repo and go to the repo folder for all following commands.
 ```
-git clone https://gitlab.eng.vmware.com/cdickmann/vsan-prometheus.git
+git clone https://github.com/vmware/vsan-integration-for-prometheus.git
 cd vsan-prometheus 
 ```
 
