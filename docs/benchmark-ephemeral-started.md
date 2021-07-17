@@ -15,7 +15,7 @@ Before diving into details, please make sure those following preparation steps a
 Step 1: Please clone this repo and go to the repo folder for all following commands.
 ```
 git clone https://github.com/vmware/vsan-integration-for-prometheus.git
-cd vsan-prometheus 
+cd vsan-integration-for-prometheus 
 ```
 
 Step 2: Create Kubernetes namespace and make it default for following kubectl commands if it is necessary.

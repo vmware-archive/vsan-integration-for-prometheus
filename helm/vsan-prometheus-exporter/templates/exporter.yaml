@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: vsan-prometheus-exporter
-        image: vmware/vsan-prometheus-exporter:v20210225
+        image: vmware/vsan-prometheus-exporter:v20210717
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

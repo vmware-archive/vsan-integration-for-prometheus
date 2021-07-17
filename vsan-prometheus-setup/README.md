@@ -19,7 +19,7 @@ Several privilege should be considered:
 ## Usage
 To generate a bearer token for vCenter authorization, the vCenter credential is required, and it prompts for the password. 
 ```
-docker run -it vmware/vsan-prometheus-setup:v20210225 --host 10.160.29.255 --username administrator@vsphere.local --cluster VSAN-Cluster
+docker run -it vmware/vsan-prometheus-setup:v20210717 --host 10.160.29.255 --username administrator@vsphere.local --cluster VSAN-Cluster
 ```
 
 Please save the token value for later usage, here is a sample output:
@@ -32,7 +32,7 @@ Successfully generate a new token:
 
 To ignore the interactive mode for prompting password, please pass the password directly:
 ```
-docker run vmware/vsan-prometheus-setup:v20210225 --host 10.160.29.255 --username administrator@vsphere.local --password 'Admin!23' --cluster VSAN-Cluster
+docker run vmware/vsan-prometheus-setup:v20210717 --host 10.160.29.255 --username administrator@vsphere.local --password 'Admin!23' --cluster VSAN-Cluster
 ```
 
 The sample output: 

@@ -13,11 +13,21 @@ from pyVmomi import vim, SoapStubAdapter
 import vsanmgmtObjects
 
 
+def _GetDataCenters(rootFolder):
+   dataCenterList = []
+   for datacenter in rootFolder.childEntity:
+      if isinstance(datacenter, vim.Folder):
+         dataCenterList.extend(_GetDataCenters(datacenter))
+      elif isinstance(datacenter, vim.Datacenter):
+         dataCenterList.append(datacenter)
+      else:
+         continue
+   return dataCenterList
+
 def GetClusterInstance(clusterName, serviceInstance):
    content = serviceInstance.RetrieveContent()
    searchIndex = content.searchIndex
-   datacenters = content.rootFolder.childEntity
-   for datacenter in datacenters:
+   for datacenter in _GetDataCenters(content.rootFolder):
       cluster = searchIndex.FindChild(datacenter.hostFolder, clusterName)
       if cluster is not None:
          return cluster

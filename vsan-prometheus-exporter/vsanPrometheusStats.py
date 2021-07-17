@@ -115,14 +115,21 @@ def _GetDGInfo(dg):
       out.append(_GetDiskInfo(cap, True, dg.ssd))
    return out
 
-def GetHostInfo(hostname, vsanConfig):
+def GetHostInfo(hostRef):
+   hostname = hostRef.name
+   vsanConfig = hostRef.configManager.vsanSystem.config
    disks = []
+   vmDict = {}
+
+   if hostRef.vm:
+      vmDict = dict([(vm.config.instanceUuid, vm.name) for vm in hostRef.vm])
    for dg in vsanConfig.storageInfo.diskMapping:
       disks.extend(_GetDGInfo(dg))
    out = {
       'vsan_cluster_uuid': vsanConfig.clusterInfo.uuid,
       'host_uuid': vsanConfig.clusterInfo.nodeUuid,
       'hostname': hostname,
+      'vmDict': vmDict,
       'disks': dict([(d['VSAN UUID'], d) for d in disks])
    }
    return out
@@ -137,9 +144,7 @@ def GetHostMos(hostRefList):
       vis = vim.cluster.VsanInternalStatsProvider(
          'vsan-internal-statsprovider', vsanStub)
       hostId = hostRef._moId
-      hostname = hostRef.name
-      vsanConfig = hostRef.configManager.vsanSystem.config
-      hostInfo = GetHostInfo(hostname, vsanConfig)
+      hostInfo = GetHostInfo(hostRef)
       hostMos[hostId] = (vis, hostInfo)
 
    threads = []

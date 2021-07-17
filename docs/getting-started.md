@@ -86,7 +86,7 @@ thus the monitoring solutions have difference between vSAN 7.0 and vSAN pre 7.0.
 Step 0.1: Please clone this repo and go to the repo folder for all following commands.
 ```
 git clone https://github.com/vmware/vsan-integration-for-prometheus.git
-cd vsan-prometheus 
+cd vsan-integration-for-prometheus 
 ```
 
 Step 0.2: Create Kubernetes namespace and make it default for following kubectl commands
@@ -103,7 +103,7 @@ either option, the metrics authorization token setup and Grafana dashboard confi
 
 Step 1: vSphere admin requests metrics authorization token for a specific vSAN cluster.
 ```
-docker run -it vmware/vsan-prometheus-setup:v20210225 --host <vCenter> --username <userName> --cluster <clustername>
+docker run -it vmware/vsan-prometheus-setup:v20210717 --host <vCenter> --username <userName> --cluster <clustername>
 ```
 This is a sample output from above command.
 Learn more vsan-prometheus-setup container usage, please go to its [readme](../vsan-prometheus-setup/README.md).

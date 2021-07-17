@@ -954,6 +954,8 @@ def augmentLabels(labels, hostInfo):
          labels['diskname'] = diskInfo["Device"]
       if 'disk_role' not in labels:
          labels['disk_role'] = 'capacity' if diskInfo["Is Capacity Tier"] else 'cache'
+   if 'vm_instance_uuid' in labels:
+      labels['vm_name'] = hostInfo['vmDict'].get(labels['vm_instance_uuid']) or "unknown-vmName"
 
 
 # hostInfo:
