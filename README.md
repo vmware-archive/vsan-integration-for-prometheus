@@ -18,7 +18,8 @@ This project highlights the following features:
 4. Using [Thanos](https://github.com/thanos-io/thanos) for uploading Prometheus snapshot to Object Store for vSAN benchmark monitoring.    
 
 ## Getting Started
-Getting started with vSAN Prometheus is simple, and takes a few minutes.
+1. Take a look [vSAN Prometheus monitoring](./docs/vsan-prometheus-architecture.md) document for the design goal of vSAN Prometheus.
+2. Getting started with vSAN Prometheus is simple, and takes a few minutes.
 See how it is done in the [Getting started](./docs/getting-started.md) document.
 
 ## Contributing
