@@ -1,0 +1,7 @@
+.DS_Store
+.gitignore
+.vscode/settings.json
+vsan-prometheus-servicediscovery/bearer-token
+vsan-prometheus-servicediscovery/vsan_sd.json
+vsan-prometheus-setup/__pycache__/vsanapiutils.cpython-310.pyc
+vsan-prometheus-setup/__pycache__/vsanmgmtObjects.cpython-310.pyc
