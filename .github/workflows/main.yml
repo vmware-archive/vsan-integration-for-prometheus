@@ -30,7 +30,7 @@ jobs:
           pip install -r tests/requirements.txt
           SHORT_SHAR=$(git rev-parse --short HEAD)
           TAGS="github-${SHORT_SHAR}"
-          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
       - name: Run unittest test_token_setup
         env:
           PYTHONPATH: "${PYTHONPATH}:/vsan-prometheus-setup"
@@ -75,7 +75,7 @@ jobs:
           pip install -r tests/requirements.txt
           SHORT_SHAR=$(git rev-parse --short HEAD)
           TAGS="github-${SHORT_SHAR}"
-          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
       - name: Run unittest test_vsan_servicediscovery
         env:
           PYTHONPATH: "${PYTHONPATH}:/vsan-prometheus-servicediscovery"
@@ -117,7 +117,7 @@ jobs:
         run: |
           SHORT_SHAR=$(git rev-parse --short HEAD)
           TAGS="github-${SHORT_SHAR}"
-          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
       - name: Set up QEMU
         if: ${{ success() }}
         uses: docker/setup-qemu-action@v1
@@ -155,7 +155,7 @@ jobs:
         run: |
           SHORT_SHAR=$(git rev-parse --short HEAD)
           TAGS="github-${SHORT_SHAR}"
-          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
       - name: Set up QEMU
         if: ${{ success() }}
         uses: docker/setup-qemu-action@v1
